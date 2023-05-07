@@ -1,95 +1,66 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { nanoid } from 'nanoid';
 
+import { useLocalStorage } from 'hooks/useLocalStorage';
 import { ContactForm, ContactList, Filter } from 'components';
 import {
   TitleStyled,
   SubtitleStyled,
 } from '../components/ContactForm/ContactForm.styled';
 
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+export const App = () => {
+  const [contacts, setContacts] = useLocalStorage('contacts', '[]');
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const contactsLS = JSON.parse(localStorage.getItem('contacts'));
-    if (contactsLS) this.setState({ contacts: contactsLS });
-  }
-
-  componentDidUpdate(_, prevState) {
-    if (prevState.contacts !== this.state.contacts)
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-  }
-
-  addContacts = contacts => {
-    if (
-      this.state.contacts.some(
-        el => el.name.toLowerCase() === contacts.name.toLowerCase()
-      )
-    ) {
-      return alert(`${contacts.name} is already in contacts.`);
+  const addContacts = ({ name, number }) => {
+    if (contacts.some(el => el.name.toLowerCase() === name.toLowerCase())) {
+      return alert(`${name} is already in contacts.`);
     }
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, { ...contacts, id: nanoid() }],
-    }));
+    setContacts(prevContacts => [
+      ...prevContacts,
+      { name, number, id: nanoid() },
+    ]);
   };
 
-  removeContacts = id => {
-    this.setState(prev => ({
-      contacts: prev.contacts.filter(el => el.id !== id),
-    }));
+  const removeContacts = id => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contacts => contacts.id !== id)
+    );
   };
 
-  filterContacts = e => {
+  const filterContacts = e => {
+    console.log(e.target.value);
     const { value } = e.target;
-    this.setState({ filter: value });
+    setFilter(value);
   };
 
-  showContacts = () => {
-    const { contacts, filter: condition } = this.state;
-    if (condition === '') return contacts;
+  const showContacts = () => {
+    if (filter === '') return contacts;
     return contacts.filter(el =>
-      el.name.toLowerCase().includes(condition.toLowerCase())
+      el.name.toLowerCase().includes(filter.toLowerCase())
     );
   };
 
-  render() {
-    const renderContacts = this.showContacts();
-    return (
-      <div
-        style={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          flexWrap: 'nowrap',
-          justifyContent: 'center',
-          alignItems: 'center',
-          fontSize: 40,
-          color: '#010101',
-        }}
-      >
-        <TitleStyled>Phonebook</TitleStyled>
-        <ContactForm
-          addContacts={this.addContacts}
-          contacts={this.state.contacts}
-        />
-        <SubtitleStyled>Contacts</SubtitleStyled>
-        <Filter
-          filter={this.state.filter}
-          filterContacts={this.filterContacts}
-        />
-        <ContactList
-          contacts={renderContacts}
-          removeContacts={this.removeContacts}
-        />
-      </div>
-    );
-  }
-}
+  const renderContacts = showContacts();
+
+  return (
+    <div
+      style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        flexWrap: 'nowrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: 40,
+        color: '#010101',
+      }}
+    >
+      <TitleStyled>Phonebook</TitleStyled>
+      <ContactForm addContacts={addContacts} contacts={contacts} />
+      <SubtitleStyled>Contacts</SubtitleStyled>
+      <Filter filter={filter} filterContacts={filterContacts} />
+      <ContactList contacts={renderContacts} removeContacts={removeContacts} />
+    </div>
+  );
+};
